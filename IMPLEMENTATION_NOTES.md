@@ -115,10 +115,13 @@ MQL5 requires structs to be defined outside classes for proper member usage.
 - MathRand() range: 0 to 32767
 - Formula: (MathRand() / 32767.0) * 2.0 - 1.0
 
-### 5. Activation Function
-- Uses tanh() for all non-input nodes
-- Output range: [-1, 1]
-- Smooth, differentiable (useful for future gradient-based methods)
+### 5. Activation Functions
+- **Output nodes**: Sigmoid activation
+  - Range: [0, 1] (strictly non-negative)
+  - Ensures Buy, Sell, Filter, SL, TP values are positive
+- **Hidden/Recurrent nodes**: Tanh activation
+  - Range: [-1, 1]
+  - Smooth, differentiable (useful for future gradient-based methods)
 
 ### 6. Recurrent Connection Handling
 - Recurrent connections use previous iteration's value

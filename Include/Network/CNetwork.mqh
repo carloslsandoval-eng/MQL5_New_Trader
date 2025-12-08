@@ -106,6 +106,7 @@ private:
    int               FindNodeIndex(int nodeId);
    void              CalculateTopologicalOrder();
    double            Activate(double x);
+   double            Sigmoid(double x);
    void              SortConnectionsByInnovation();
    void              UpdateTopologicalLevels();
    
@@ -253,11 +254,19 @@ int CNetwork::FindNodeIndex(int nodeId)
 }
 
 //+------------------------------------------------------------------+
-//| Activation function (tanh)                                        |
+//| Activation function (tanh) for hidden nodes                      |
 //+------------------------------------------------------------------+
 double CNetwork::Activate(double x)
 {
    return MathTanh(x);
+}
+
+//+------------------------------------------------------------------+
+//| Sigmoid activation function for output nodes                     |
+//+------------------------------------------------------------------+
+double CNetwork::Sigmoid(double x)
+{
+   return 1.0 / (1.0 + MathExp(-x));
 }
 
 //+------------------------------------------------------------------+
@@ -420,8 +429,21 @@ bool CNetwork::FeedForward(const double &inputs[])
          }
       }
       
-      // Apply activation
-      m_nodes[nodeIdx].value = Activate(sum);
+      // Apply activation based on node type
+      if(m_nodes[nodeIdx].type == NODE_OUTPUT)
+      {
+         // Output nodes use Sigmoid [0, 1]
+         m_nodes[nodeIdx].value = Sigmoid(sum);
+         
+         // Assert output is non-negative (Sigmoid guarantees this)
+         if(m_nodes[nodeIdx].value < 0.0)
+            m_nodes[nodeIdx].value = 0.0;
+      }
+      else
+      {
+         // Hidden/Recurrent nodes use Tanh [-1, 1]
+         m_nodes[nodeIdx].value = Activate(sum);
+      }
       
       // Update recurrent buffer for next iteration
       m_nodes[nodeIdx].recurrentBuffer = m_nodes[nodeIdx].value;

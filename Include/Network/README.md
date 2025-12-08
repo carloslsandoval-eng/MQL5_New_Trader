@@ -131,11 +131,18 @@ loadedNetwork.LoadFromFile("my_network.bin");
 - Recurrent connections are skipped during topological sorting
 - Ensures efficient single-pass feedforward execution
 
-### Activation Function
-Uses hyperbolic tangent (tanh) for all non-input nodes:
-```mql5
-output = tanh(weighted_sum_of_inputs)
-```
+### Activation Functions
+Different activation functions for different node types:
+- **Output nodes**: Sigmoid activation (range [0, 1])
+  ```mql5
+  output = 1.0 / (1.0 + exp(-weighted_sum))
+  ```
+- **Hidden/Recurrent nodes**: Hyperbolic tangent (range [-1, 1])
+  ```mql5
+  output = tanh(weighted_sum_of_inputs)
+  ```
+
+This ensures output values (Buy, Sell, Filter, SL, TP) are strictly non-negative [0, 1].
 
 ### Innovation Numbers
 - Each connection has a unique innovation number
