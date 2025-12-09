@@ -110,6 +110,12 @@ private:
    void              SortConnectionsByInnovation();
    void              UpdateTopologicalLevels();
    
+   // CSV persistence helpers
+   bool              SaveToCSV(const string filename);
+   bool              LoadFromCSV(const string filename);
+   string            NodeTypeToString(ENUM_NODE_TYPE type);
+   ENUM_NODE_TYPE    StringToNodeType(const string str);
+   
 public:
                      CNetwork();
                     ~CNetwork();
@@ -132,7 +138,7 @@ public:
    void              ResetRecurrentBuffers();
    
    // Persistence
-   bool              SaveToFile(const string filename);
+   bool              SaveToFile(const string filename, bool asCSV = false);
    bool              LoadFromFile(const string filename);
    
    // Getters
@@ -652,8 +658,13 @@ void CNetwork::ResetRecurrentBuffers()
 //+------------------------------------------------------------------+
 //| Save network topology and weights to file (skip buffers)         |
 //+------------------------------------------------------------------+
-bool CNetwork::SaveToFile(const string filename)
+bool CNetwork::SaveToFile(const string filename, bool asCSV = false)
 {
+   // If CSV format requested, use CSV export
+   if(asCSV)
+      return SaveToCSV(filename);
+   
+   // Binary format
    int handle = FileOpen(filename, FILE_WRITE | FILE_BIN | FILE_COMMON);
    if(handle == INVALID_HANDLE)
       return false;
@@ -695,6 +706,19 @@ bool CNetwork::SaveToFile(const string filename)
 //+------------------------------------------------------------------+
 bool CNetwork::LoadFromFile(const string filename)
 {
+   // Check if file is CSV based on extension
+   string ext = "";
+   int dot_pos = StringFind(filename, ".", 0);
+   if(dot_pos >= 0)
+   {
+      ext = StringSubstr(filename, dot_pos + 1);
+      StringToUpper(ext);
+   }
+   
+   if(ext == "CSV")
+      return LoadFromCSV(filename);
+   
+   // Binary format
    int handle = FileOpen(filename, FILE_READ | FILE_BIN | FILE_COMMON);
    if(handle == INVALID_HANDLE)
       return false;
@@ -739,6 +763,170 @@ bool CNetwork::LoadFromFile(const string filename)
       m_connections[i].frozen = (FileReadInteger(handle) != 0);
       m_connections[i].recurrent = (FileReadInteger(handle) != 0);
       m_connections[i].innovation = FileReadInteger(handle);
+   }
+   
+   FileClose(handle);
+   
+   SortConnectionsByInnovation();
+   CalculateTopologicalOrder();
+   
+   return true;
+}
+
+//+------------------------------------------------------------------+
+//| Convert node type enum to string                                 |
+//+------------------------------------------------------------------+
+string CNetwork::NodeTypeToString(ENUM_NODE_TYPE type)
+{
+   switch(type)
+   {
+      case NODE_INPUT:     return "INPUT";
+      case NODE_HIDDEN:    return "HIDDEN";
+      case NODE_OUTPUT:    return "OUTPUT";
+      case NODE_RECURRENT: return "RECURRENT";
+      default:             return "UNKNOWN";
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Convert string to node type enum                                 |
+//+------------------------------------------------------------------+
+ENUM_NODE_TYPE CNetwork::StringToNodeType(const string str)
+{
+   if(str == "INPUT")     return NODE_INPUT;
+   if(str == "HIDDEN")    return NODE_HIDDEN;
+   if(str == "OUTPUT")    return NODE_OUTPUT;
+   if(str == "RECURRENT") return NODE_RECURRENT;
+   return NODE_INPUT; // Default
+}
+
+//+------------------------------------------------------------------+
+//| Save network to CSV format for inspection                        |
+//+------------------------------------------------------------------+
+bool CNetwork::SaveToCSV(const string filename)
+{
+   int handle = FileOpen(filename, FILE_WRITE | FILE_CSV | FILE_COMMON, ',');
+   if(handle == INVALID_HANDLE)
+      return false;
+   
+   // Write network metadata section
+   FileWrite(handle, "# NETWORK METADATA");
+   FileWrite(handle, "InputCount", m_inputCount);
+   FileWrite(handle, "OutputCount", m_outputCount);
+   FileWrite(handle, "NodeCount", m_nodeCount);
+   FileWrite(handle, "ConnectionCount", m_connectionCount);
+   FileWrite(handle, "NextNodeId", m_nextNodeId);
+   FileWrite(handle, "NextInnovation", m_nextInnovation);
+   FileWrite(handle, "");
+   
+   // Write nodes section
+   FileWrite(handle, "# NODES");
+   FileWrite(handle, "NodeID", "Type", "TopoLevel");
+   for(int i = 0; i < m_nodeCount; i++)
+   {
+      FileWrite(handle, 
+                m_nodes[i].id,
+                NodeTypeToString(m_nodes[i].type),
+                m_nodes[i].topoLevel);
+   }
+   FileWrite(handle, "");
+   
+   // Write connections section
+   FileWrite(handle, "# CONNECTIONS");
+   FileWrite(handle, "Innovation", "From", "To", "Weight", "Enabled", "Frozen", "Recurrent");
+   for(int i = 0; i < m_connectionCount; i++)
+   {
+      FileWrite(handle,
+                m_connections[i].innovation,
+                m_connections[i].fromNode,
+                m_connections[i].toNode,
+                DoubleToString(m_connections[i].weight, 8),
+                m_connections[i].enabled ? "TRUE" : "FALSE",
+                m_connections[i].frozen ? "TRUE" : "FALSE",
+                m_connections[i].recurrent ? "TRUE" : "FALSE");
+   }
+   
+   FileClose(handle);
+   return true;
+}
+
+//+------------------------------------------------------------------+
+//| Load network from CSV format                                     |
+//+------------------------------------------------------------------+
+bool CNetwork::LoadFromCSV(const string filename)
+{
+   int handle = FileOpen(filename, FILE_READ | FILE_CSV | FILE_COMMON, ',');
+   if(handle == INVALID_HANDLE)
+      return false;
+   
+   Reset();
+   
+   // Read metadata section
+   string line;
+   while(!FileIsEnding(handle))
+   {
+      line = FileReadString(handle);
+      if(StringFind(line, "# NETWORK METADATA") >= 0) break;
+   }
+   
+   // Read metadata values
+   FileReadString(handle); m_inputCount = (int)FileReadNumber(handle);
+   FileReadString(handle); m_outputCount = (int)FileReadNumber(handle);
+   FileReadString(handle); m_nodeCount = (int)FileReadNumber(handle);
+   FileReadString(handle); m_connectionCount = (int)FileReadNumber(handle);
+   FileReadString(handle); m_nextNodeId = (int)FileReadNumber(handle);
+   FileReadString(handle); m_nextInnovation = (int)FileReadNumber(handle);
+   
+   // Skip to nodes section
+   while(!FileIsEnding(handle))
+   {
+      line = FileReadString(handle);
+      if(StringFind(line, "# NODES") >= 0) break;
+   }
+   
+   // Skip header line
+   FileReadString(handle);
+   
+   // Read nodes
+   ArrayResize(m_nodes, m_nodeCount);
+   for(int i = 0; i < m_nodeCount; i++)
+   {
+      m_nodes[i].id = (int)FileReadNumber(handle);
+      m_nodes[i].type = StringToNodeType(FileReadString(handle));
+      m_nodes[i].topoLevel = (int)FileReadNumber(handle);
+      m_nodes[i].value = 0.0;
+      m_nodes[i].recurrentBuffer = 0.0;
+   }
+   
+   // Calculate hidden count
+   m_hiddenCount = 0;
+   for(int i = 0; i < m_nodeCount; i++)
+   {
+      if(m_nodes[i].type == NODE_HIDDEN || m_nodes[i].type == NODE_RECURRENT)
+         m_hiddenCount++;
+   }
+   
+   // Skip to connections section
+   while(!FileIsEnding(handle))
+   {
+      line = FileReadString(handle);
+      if(StringFind(line, "# CONNECTIONS") >= 0) break;
+   }
+   
+   // Skip header line
+   FileReadString(handle);
+   
+   // Read connections
+   ArrayResize(m_connections, m_connectionCount);
+   for(int i = 0; i < m_connectionCount; i++)
+   {
+      m_connections[i].innovation = (int)FileReadNumber(handle);
+      m_connections[i].fromNode = (int)FileReadNumber(handle);
+      m_connections[i].toNode = (int)FileReadNumber(handle);
+      m_connections[i].weight = StringToDouble(FileReadString(handle));
+      m_connections[i].enabled = (FileReadString(handle) == "TRUE");
+      m_connections[i].frozen = (FileReadString(handle) == "TRUE");
+      m_connections[i].recurrent = (FileReadString(handle) == "TRUE");
    }
    
    FileClose(handle);

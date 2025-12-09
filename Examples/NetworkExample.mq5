@@ -137,8 +137,8 @@ void OnStart()
    network.GetOutputs(outputs3);
    Print("Outputs after reset: ", outputs3[0], ", ", outputs3[1], ", ", outputs3[2], ", ", outputs3[3], ", ", outputs3[4]);
    
-   // Test 8: Save and Load
-   Print("\n--- Test 8: Save and Load ---");
+   // Test 8: Save and Load (Binary)
+   Print("\n--- Test 8: Save and Load (Binary) ---");
    string filename = "network_test.bin";
    
    if(network.SaveToFile(filename))
@@ -176,45 +176,85 @@ void OnStart()
       Print("ERROR: Failed to save network");
    }
    
+   // Test 8b: Save and Load (CSV for inspection)
+   Print("\n--- Test 8b: Save and Load (CSV) ---");
+   string csvFilename = "network_test.csv";
+   
+   if(network.SaveToFile(csvFilename, true))
+   {
+      Print("Network saved to CSV: ", csvFilename);
+      Print("CSV file can be opened in Excel for inspection");
+      
+      CNetwork network3;
+      if(network3.LoadFromFile(csvFilename))
+      {
+         Print("Network loaded from CSV");
+         Print("Loaded - Inputs: ", network3.GetInputCount(), 
+               " Outputs: ", network3.GetOutputCount(),
+               " Nodes: ", network3.GetNodeCount(),
+               " Connections: ", network3.GetConnectionCount());
+         
+         // Test loaded network
+         if(network3.FeedForward(inputs2))
+         {
+            double outputs5[];
+            network3.GetOutputs(outputs5);
+            Print("CSV network outputs: ", outputs5[0], ", ", outputs5[1], ", ", 
+                  outputs5[2], ", ", outputs5[3], ", ", outputs5[4]);
+         }
+      }
+      else
+      {
+         Print("ERROR: Failed to load CSV network");
+      }
+      
+      // Clean up test file
+      FileDelete(csvFilename);
+   }
+   else
+   {
+      Print("ERROR: Failed to save CSV network");
+   }
+   
    // Test 9: Multiple mutations
    Print("\n--- Test 9: Multiple Mutations ---");
-   CNetwork network3;
-   network3.Initialize(2);
-   Print("Initial: Nodes=", network3.GetNodeCount(), " Connections=", network3.GetConnectionCount());
+   CNetwork network4;
+   network4.Initialize(2);
+   Print("Initial: Nodes=", network4.GetNodeCount(), " Connections=", network4.GetConnectionCount());
    
    for(int i = 0; i < 3; i++)
    {
-      network3.MutateDepth();
-      Print("After depth mutation ", i+1, ": Nodes=", network3.GetNodeCount(), 
-            " Connections=", network3.GetConnectionCount());
+      network4.MutateDepth();
+      Print("After depth mutation ", i+1, ": Nodes=", network4.GetNodeCount(), 
+            " Connections=", network4.GetConnectionCount());
    }
    
    for(int i = 0; i < 2; i++)
    {
-      network3.MutateLateral();
-      Print("After lateral mutation ", i+1, ": Nodes=", network3.GetNodeCount(), 
-            " Connections=", network3.GetConnectionCount());
+      network4.MutateLateral();
+      Print("After lateral mutation ", i+1, ": Nodes=", network4.GetNodeCount(), 
+            " Connections=", network4.GetConnectionCount());
    }
    
-   network3.MutateMemory();
-   Print("After memory mutation: Nodes=", network3.GetNodeCount(), 
-         " Connections=", network3.GetConnectionCount());
+   network4.MutateMemory();
+   Print("After memory mutation: Nodes=", network4.GetNodeCount(), 
+         " Connections=", network4.GetConnectionCount());
    
    // Final feed forward test
    double inputs3[];
-   ArrayResize(inputs3, network3.GetInputCount());
-   for(int i = 0; i < network3.GetInputCount(); i++)
+   ArrayResize(inputs3, network4.GetInputCount());
+   for(int i = 0; i < network4.GetInputCount(); i++)
    {
       inputs3[i] = 0.1 * i;
    }
    
-   if(network3.FeedForward(inputs3))
+   if(network4.FeedForward(inputs3))
    {
       Print("Final feed forward successful on complex network");
-      double outputs5[];
-      network3.GetOutputs(outputs5);
-      Print("Final outputs: Buy=", outputs5[OUT_BUY], " Sell=", outputs5[OUT_SELL], 
-            " Filter=", outputs5[OUT_FILTER], " SL=", outputs5[OUT_SL], " TP=", outputs5[OUT_TP]);
+      double outputs6[];
+      network4.GetOutputs(outputs6);
+      Print("Final outputs: Buy=", outputs6[OUT_BUY], " Sell=", outputs6[OUT_SELL], 
+            " Filter=", outputs6[OUT_FILTER], " SL=", outputs6[OUT_SL], " TP=", outputs6[OUT_TP]);
    }
    
    Print("\n=== CNetwork Test Completed Successfully ===");
