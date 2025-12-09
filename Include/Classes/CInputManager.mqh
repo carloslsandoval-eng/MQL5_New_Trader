@@ -255,8 +255,8 @@ double CInputManager::CalculateInput(int index)
       {
          double atr0 = GetATRValue(0);
          double atr5 = GetATRValue(5);
-         if(atr <= 0.0) return 0.0;
-         return (atr0 - atr5) / atr;
+         if(atr0 <= 0.0) return 0.0;
+         return (atr0 - atr5) / atr0;
       }
       
       case 4: // RSI_Fast = (RSI(7)-50)/50.0
