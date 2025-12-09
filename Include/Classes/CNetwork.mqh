@@ -280,10 +280,11 @@ void CNetwork::Mutate()
    {
       Mutate_AddLink();
    }
-   else if(rnd < 0.90)  // 0.80 -> 0.90 to ensure weight mutations happen
+   else if(rnd < 0.80)
    {
       Mutate_PerturbWeights();
    }
+   // Note: 20% chance of no mutation (allows stability)
 }
 
 //+------------------------------------------------------------------+
@@ -431,7 +432,9 @@ double CNetwork::Tanh(double x)
 //+------------------------------------------------------------------+
 double CNetwork::RandomRange(double min, double max)
 {
-   return min + (max - min) * (MathRand() / 32767.0);
+   // MQL5 MathRand() returns [0, 32767]
+   double norm = MathRand() / 32767.0;
+   return min + (max - min) * norm;
 }
 
 //+------------------------------------------------------------------+

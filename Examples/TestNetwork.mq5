@@ -54,7 +54,11 @@ void OnStart()
    inputs[3] = -0.2;  // VolSlope (Volatility acceleration)
    
    for(int i = 4; i < InpInputCount; i++)
-      inputs[i] = (MathRand() / 32767.0) * 2.0 - 1.0;  // Random [-1, 1]
+   {
+      // MQL5 MathRand() returns [0, 32767]
+      double norm = MathRand() / 32767.0;
+      inputs[i] = norm * 2.0 - 1.0;  // Random [-1, 1]
+   }
    
    Print("Input values:");
    for(int i = 0; i < InpInputCount; i++)
