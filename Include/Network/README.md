@@ -114,13 +114,26 @@ network.ResetRecurrentBuffers();
 ### Persistence
 
 ```mql5
-// Save network (topology + weights, skip buffers)
+// Save network in binary format (default)
+// Files are saved to the common folder (shared across terminals)
 network.SaveToFile("my_network.bin");
 
-// Load network
+// Save network in CSV format for inspection
+network.SaveToFile("my_network.csv", true);
+
+// Load network from common folder
+// Automatically detects format based on file extension
 CNetwork loadedNetwork;
-loadedNetwork.LoadFromFile("my_network.bin");
+loadedNetwork.LoadFromFile("my_network.bin");  // Binary
+loadedNetwork.LoadFromFile("my_network.csv");  // CSV
 ```
+
+#### CSV Format
+The CSV format is human-readable and designed for inspection during testing:
+- Includes metadata (input/output counts, node/connection counts)
+- Node table with ID, Type, and Topological Level
+- Connection table with Innovation, From/To nodes, Weight, and flags
+- Can be opened in Excel or any text editor for examination
 
 ## Implementation Details
 
@@ -183,7 +196,9 @@ This ensures output values (Buy, Sell, Filter, SL, TP) are strictly non-negative
 
 ## File Format
 
-Binary format for persistence:
+Binary format for persistence (saved to common folder):
+- **Location**: Common folder (shared across all MT5 terminals)
+- **Format**: Binary file with FILE_COMMON flag
 - Header: input count, output count, node count, connection count, next node ID, next innovation
 - Nodes: ID, type, topological level (skip value and recurrentBuffer)
 - Connections: from, to, weight, enabled, frozen, recurrent, innovation
