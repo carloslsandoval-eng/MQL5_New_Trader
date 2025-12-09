@@ -23,7 +23,6 @@ private:
    
    // Indicator handles
    int               m_handle_atr14;        // ATR(14)
-   int               m_handle_atr_ma100;    // MA of ATR(14) over 100 periods
    int               m_handle_ma50;         // MA(50)
    int               m_handle_ma200;        // MA(200)
    int               m_handle_rsi7;         // RSI(7)
@@ -31,7 +30,6 @@ private:
    int               m_handle_bb20;         // Bollinger Bands(20,2)
    int               m_handle_stddev10;     // StdDev(10)
    int               m_handle_stddev50;     // StdDev(50)
-   int               m_handle_tick_vol_ma;  // MA of tick volume(20)
    
    // Private calculation method
    double            CalculateInput(int index);
@@ -44,6 +42,7 @@ private:
    double            GetStdDevValue(int handle, int shift);
    double            GetBBValue(int buffer, int shift);
    int               FindPivotAge(int bars);
+   double            GetATR_MA(int period);
    
 public:
    // Constructor
@@ -72,7 +71,6 @@ CInputManager::CInputManager()
    
    // Initialize all handles to INVALID
    m_handle_atr14 = INVALID_HANDLE;
-   m_handle_atr_ma100 = INVALID_HANDLE;
    m_handle_ma50 = INVALID_HANDLE;
    m_handle_ma200 = INVALID_HANDLE;
    m_handle_rsi7 = INVALID_HANDLE;
@@ -80,7 +78,6 @@ CInputManager::CInputManager()
    m_handle_bb20 = INVALID_HANDLE;
    m_handle_stddev10 = INVALID_HANDLE;
    m_handle_stddev50 = INVALID_HANDLE;
-   m_handle_tick_vol_ma = INVALID_HANDLE;
 }
 
 //+------------------------------------------------------------------+
@@ -104,14 +101,6 @@ bool CInputManager::Init(string symbol, ENUM_TIMEFRAMES period)
    if(m_handle_atr14 == INVALID_HANDLE)
    {
       Print("Failed to create ATR(14) handle");
-      return false;
-   }
-   
-   // Create MA of ATR for normalization
-   m_handle_atr_ma100 = iMA(m_symbol, m_period, 100, 0, MODE_SMA, PRICE_CLOSE);
-   if(m_handle_atr_ma100 == INVALID_HANDLE)
-   {
-      Print("Failed to create MA(100) handle");
       return false;
    }
    
@@ -244,7 +233,7 @@ double CInputManager::CalculateInput(int index)
       
       case 1: // ATR_Norm = ATR(14)/MA_ATR(100)
       {
-         double atr_ma = GetMAValue(m_handle_atr_ma100, 0);
+         double atr_ma = GetATR_MA(100);
          if(atr_ma <= 0.0) return 1.0;
          return atr / atr_ma;
       }
@@ -310,9 +299,9 @@ double CInputManager::CalculateInput(int index)
       
       case 9: // BB_Width = (Upper-Lower)/Middle
       {
-         double bb_upper = GetBBValue(BASE_LINE + 1, 0);  // Upper band
-         double bb_lower = GetBBValue(BASE_LINE - 1, 0);  // Lower band
-         double bb_mid = GetBBValue(BASE_LINE, 0);        // Middle band
+         double bb_upper = GetBBValue(1, 0);  // Upper band (buffer 1)
+         double bb_lower = GetBBValue(2, 0);  // Lower band (buffer 2)
+         double bb_mid = GetBBValue(0, 0);    // Middle band (buffer 0)
          
          if(bb_mid <= 0.0) return 0.0;
          return (bb_upper - bb_lower) / bb_mid;
@@ -362,7 +351,7 @@ double CInputManager::CalculateInput(int index)
       
       case 16: // BB_Break = (Close-Upper)/ATR
       {
-         double bb_upper = GetBBValue(BASE_LINE + 1, 0);
+         double bb_upper = GetBBValue(1, 0);  // Upper band (buffer 1)
          return (close - bb_upper) / atr;
       }
       
@@ -507,14 +496,30 @@ int CInputManager::FindPivotAge(int bars)
 }
 
 //+------------------------------------------------------------------+
+//| Helper: Calculate MA of ATR values                               |
+//+------------------------------------------------------------------+
+double CInputManager::GetATR_MA(int period)
+{
+   double atr_buffer[];
+   ArraySetAsSeries(atr_buffer, true);
+   
+   if(CopyBuffer(m_handle_atr14, 0, 0, period, atr_buffer) < period)
+      return 0.0;
+   
+   double sum = 0.0;
+   for(int i = 0; i < period; i++)
+      sum += atr_buffer[i];
+   
+   return sum / period;
+}
+
+//+------------------------------------------------------------------+
 //| Cleanup indicator handles                                         |
 //+------------------------------------------------------------------+
 void CInputManager::Deinit()
 {
    if(m_handle_atr14 != INVALID_HANDLE)
       IndicatorRelease(m_handle_atr14);
-   if(m_handle_atr_ma100 != INVALID_HANDLE)
-      IndicatorRelease(m_handle_atr_ma100);
    if(m_handle_ma50 != INVALID_HANDLE)
       IndicatorRelease(m_handle_ma50);
    if(m_handle_ma200 != INVALID_HANDLE)
@@ -531,7 +536,6 @@ void CInputManager::Deinit()
       IndicatorRelease(m_handle_stddev50);
    
    m_handle_atr14 = INVALID_HANDLE;
-   m_handle_atr_ma100 = INVALID_HANDLE;
    m_handle_ma50 = INVALID_HANDLE;
    m_handle_ma200 = INVALID_HANDLE;
    m_handle_rsi7 = INVALID_HANDLE;
