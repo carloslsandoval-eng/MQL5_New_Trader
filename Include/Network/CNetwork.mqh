@@ -654,7 +654,7 @@ void CNetwork::ResetRecurrentBuffers()
 //+------------------------------------------------------------------+
 bool CNetwork::SaveToFile(const string filename)
 {
-   int handle = FileOpen(filename, FILE_WRITE | FILE_BIN);
+   int handle = FileOpen(filename, FILE_WRITE | FILE_BIN | FILE_COMMON);
    if(handle == INVALID_HANDLE)
       return false;
    
@@ -695,7 +695,7 @@ bool CNetwork::SaveToFile(const string filename)
 //+------------------------------------------------------------------+
 bool CNetwork::LoadFromFile(const string filename)
 {
-   int handle = FileOpen(filename, FILE_READ | FILE_BIN);
+   int handle = FileOpen(filename, FILE_READ | FILE_BIN | FILE_COMMON);
    if(handle == INVALID_HANDLE)
       return false;
    

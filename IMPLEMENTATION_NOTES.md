@@ -58,10 +58,10 @@
    - ✅ ResetRecurrentBuffers() method available
 
 2. **Save/Load topology + weights, SKIP buffer**
-   - ✅ SaveToFile() saves nodes and connections
+   - ✅ SaveToFile() saves nodes and connections to common folder
    - ✅ Node values and recurrentBuffer NOT saved
-   - ✅ LoadFromFile() initializes buffers to 0
-   - ✅ Binary file format
+   - ✅ LoadFromFile() initializes buffers to 0 from common folder
+   - ✅ Binary file format with FILE_COMMON flag
 
 ### ✅ Rules Compliance
 
