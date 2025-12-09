@@ -297,14 +297,13 @@ double CInputManager::CalculateInput(int index)
          return (high - max_oc) / atr;
       }
       
-      case 9: // BB_Width = (Upper-Lower)/Middle
+      case 9: // BB_Width = (Upper-Lower)/ATR
       {
          double bb_upper = GetBBValue(1, 0);  // Upper band (buffer 1)
          double bb_lower = GetBBValue(2, 0);  // Lower band (buffer 2)
-         double bb_mid = GetBBValue(0, 0);    // Middle band (buffer 0)
          
-         if(bb_mid <= 0.0) return 0.0;
-         return (bb_upper - bb_lower) / bb_mid;
+         if(atr <= 0.0) return 0.0;
+         return (bb_upper - bb_lower) / atr;
       }
       
       case 10: // Time_Sess = (Hour*60+Min)/1440.0
@@ -314,11 +313,15 @@ double CInputManager::CalculateInput(int index)
          return (dt.hour * 60 + dt.min) / 1440.0;
       }
       
-      case 11: // Round_Num = (Close - Round(Close*100)/100)/ATR
+      case 11: // Round_Num = Proximity to round level (1.0 = on level, 0.0 = >1 ATR away)
       {
-         // Distance to nearest round number (0.01)
-         double rounded = MathRound(close * 100.0) / 100.0;
-         return (close - rounded) / atr;
+         // Calculate distance to nearest 50/100 point level
+         double step = 0.01;  // For most pairs
+         double dist = MathAbs(close - MathRound(close / step) * step);
+         
+         // Proximity score: 1.0 when on level, 0.0 when >= 1 ATR away
+         if(atr <= 0.0) return 0.0;
+         return 1.0 - MathMin(dist / atr, 1.0);
       }
       
       // ===== BATCH 3: Rich (12-19) =====

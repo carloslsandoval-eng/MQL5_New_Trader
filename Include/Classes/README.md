@@ -31,9 +31,9 @@ The class provides 20 distinct input features organized into three batches by co
 | 6 | ADX_Norm | ADX(14)/100.0 | FILT | Trend strength |
 | 7 | Mom_Conf | abs(RSI(7)-50)/50.0 | SIZE | Momentum conviction |
 | 8 | Wick_Up | (High-Max(O,C))/ATR | DIR | Selling pressure |
-| 9 | BB_Width | (Upper-Lower)/Middle | RISK | Squeeze/expansion |
+| 9 | BB_Width | (Upper-Lower)/ATR | RISK | Squeeze/expansion (volatility-normalized) |
 | 10 | Time_Sess | (Hour*60+Min)/1440.0 | FILT | Session time (0.0-1.0) |
-| 11 | Round_Num | (Close-Round)/ATR | FILT | Distance to round number |
+| 11 | Round_Num | 1.0-min(Dist/ATR,1.0) | FILT | Proximity to round level (1.0=on, 0.0=>1ATR away) |
 
 ### BATCH 3: Rich (Indices 12-19)
 | Index | Name | Formula | Category | Description |

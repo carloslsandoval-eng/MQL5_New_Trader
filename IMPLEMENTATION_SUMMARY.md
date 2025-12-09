@@ -45,9 +45,9 @@ Successfully implemented the CInputManager class according to the Elite20_Static
 | 6 | ADX_Norm | ADX(14)/100.0 | Trend strength |
 | 7 | Mom_Conf | abs(RSI(7)-50)/50.0 | Conviction |
 | 8 | Wick_Up | (High-Max(O,C))/ATR | Selling pressure |
-| 9 | BB_Width | (Upper-Lower)/Middle | Squeeze/expansion |
+| 9 | BB_Width | (Upper-Lower)/ATR | Volatility-normalized squeeze/expansion |
 | 10 | Time_Sess | (Hour*60+Min)/1440.0 | Session time |
-| 11 | Round_Num | (Close-Round)/ATR | Round level distance |
+| 11 | Round_Num | 1.0-min(Dist/ATR,1.0) | Proximity to round level |
 
 #### BATCH 3: Rich (12-19) - 8 Features
 | Index | Name | Formula | Purpose |
