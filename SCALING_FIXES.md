@@ -166,10 +166,10 @@ Scenario 4: Price = 1.1015 (mid-level), ATR = 0.0020
   dist = 0.0005
   Round_Num = 1.0 - min(0.0005/0.0020, 1.0) = 0.75 ✓
 
-Scenario 5: Price = 1.1025, ATR = 0.0020 (>1 ATR away)
-  dist = 0.0005 (to 1.1030)
-  Round_Num = 1.0 - min(0.0005/0.0020, 1.0) = 0.75
-  (Note: actually 0.5 pip from level, so 0.75 is correct)
+Scenario 5: Price = 1.1025, ATR = 0.0020 (>1 ATR away from nearest level)
+  dist = 0.0025 (nearest level is 1.1000, step 0.01)
+  Round_Num = 1.0 - min(0.0025/0.0020, 1.0) = 1.0 - 1.0 = 0.0 ✓
+  (Distance exceeds ATR, so clamped to 0.0)
 ```
 
 ## Impact Assessment
