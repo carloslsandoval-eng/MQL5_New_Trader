@@ -137,7 +137,7 @@ void OnStart()
       else
       {
          // Random fitness for testing
-         fitness = MathRand() / 32767.0;
+         fitness = MathRand() / RAND_MAX_MQL5;
       }
       
       Print("Agent ", i + 1, " evaluated Genome ", jobs[i].id, ": Fitness = ", fitness);
@@ -185,7 +185,7 @@ void OnStart()
       if(manager.GetNextJob(job))
       {
          // Simulate evaluation
-         double fitness = MathRand() / 32767.0;
+         double fitness = MathRand() / RAND_MAX_MQL5;
          
          // Report immediately
          if(manager.ReportFitness(job.id, fitness))
@@ -281,7 +281,7 @@ void OnStart()
          if(manager.GetNextJob(job))
          {
             // Random fitness
-            double fitness = 0.5 + (MathRand() / 32767.0) * 0.5;  // [0.5, 1.0]
+            double fitness = 0.5 + (MathRand() / RAND_MAX_MQL5) * 0.5;  // [0.5, 1.0]
             
             if(manager.ReportFitness(job.id, fitness))
             {

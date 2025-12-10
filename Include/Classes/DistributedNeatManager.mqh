@@ -35,6 +35,8 @@ enum ENUM_JOB_STATUS
 #define GAUSS_SAMPLES      12       // Samples for Gaussian approximation
 #define GAUSS_MEAN         6.0      // Mean adjustment for Gaussian
 #define GAUSS_STDDEV       0.1      // Standard deviation for weight perturbation
+#define MIN_INITIAL_LINKS  4        // Minimum initial links per genome
+#define INITIAL_LINK_RANGE 4        // Random range added to minimum links
 
 //+------------------------------------------------------------------+
 //| Structures                                                         |
@@ -561,7 +563,7 @@ CDistributedNeatManager::~CDistributedNeatManager()
 //+------------------------------------------------------------------+
 // Initialize manager
 //+------------------------------------------------------------------+
-bool CDistributedNeatManager::Init(string state_file = "neat_state.bin")
+bool CDistributedNeatManager::Init(string state_file)
 {
    m_state_file = state_file;
    return true;
@@ -617,7 +619,7 @@ bool CDistributedNeatManager::InitializePopulation(int population_size, int inpu
          }
          
          // Add some random initial connections
-         int init_links = 4 + (int)(MathRand() % 4);  // 4-7 links
+         int init_links = MIN_INITIAL_LINKS + (int)(MathRand() % INITIAL_LINK_RANGE);  // 4-7 links
          ArrayResize(state.population[i].links, init_links);
          
          for(int j = 0; j < init_links; j++)
