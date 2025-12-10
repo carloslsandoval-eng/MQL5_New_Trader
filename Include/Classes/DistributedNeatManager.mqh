@@ -300,8 +300,12 @@ void CNeatCore::Speciate(SGenome &population[])
 void CNeatCore::Crossover(SGenome &parent1, SGenome &parent2, SGenome &offspring)
 {
    // Simplified: Copy structure from fitter parent, weights from both
-   SGenome &better = (parent1.fitness > parent2.fitness) ? parent1 : parent2;
-   CopyGenome(better, offspring);
+   bool use_parent1 = parent1.fitness > parent2.fitness;
+   
+   if(use_parent1)
+      CopyGenome(parent1, offspring);
+   else
+      CopyGenome(parent2, offspring);
    
    // Randomly mix weights from both parents
    int link_count = ArraySize(offspring.links);
@@ -310,13 +314,30 @@ void CNeatCore::Crossover(SGenome &parent1, SGenome &parent2, SGenome &offspring
       if(RandomRange(0.0, 1.0) < 0.5)
       {
          // Try to find matching link in other parent
-         for(int j = 0; j < ArraySize(parent2.links); j++)
+         if(use_parent1)
          {
-            if(parent2.links[j].in_node_id == offspring.links[i].in_node_id &&
-               parent2.links[j].out_node_id == offspring.links[i].out_node_id)
+            // Look in parent2
+            for(int j = 0; j < ArraySize(parent2.links); j++)
             {
-               offspring.links[i].weight = parent2.links[j].weight;
-               break;
+               if(parent2.links[j].in_node_id == offspring.links[i].in_node_id &&
+                  parent2.links[j].out_node_id == offspring.links[i].out_node_id)
+               {
+                  offspring.links[i].weight = parent2.links[j].weight;
+                  break;
+               }
+            }
+         }
+         else
+         {
+            // Look in parent1
+            for(int j = 0; j < ArraySize(parent1.links); j++)
+            {
+               if(parent1.links[j].in_node_id == offspring.links[i].in_node_id &&
+                  parent1.links[j].out_node_id == offspring.links[i].out_node_id)
+               {
+                  offspring.links[i].weight = parent1.links[j].weight;
+                  break;
+               }
             }
          }
       }
