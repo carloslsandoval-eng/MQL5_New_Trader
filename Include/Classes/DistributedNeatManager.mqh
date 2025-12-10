@@ -30,6 +30,11 @@ enum ENUM_JOB_STATUS
 #define JOB_TIMEOUT_MS     600000   // 10 minutes job timeout
 #define MAX_POPULATION     100      // Population size cap
 #define INNOVATION_CAP     10000    // Max innovation records
+#define RAND_MAX_MQL5      32767.0  // MQL5 MathRand() max value
+#define ARRAY_IDX_EPSILON  0.001    // Small value to avoid array boundary issues
+#define GAUSS_SAMPLES      12       // Samples for Gaussian approximation
+#define GAUSS_MEAN         6.0      // Mean adjustment for Gaussian
+#define GAUSS_STDDEV       0.1      // Standard deviation for weight perturbation
 
 //+------------------------------------------------------------------+
 //| Structures                                                         |
@@ -213,7 +218,7 @@ CNeatCore::~CNeatCore()
 //+------------------------------------------------------------------+
 double CNeatCore::RandomRange(double min, double max)
 {
-   double norm = MathRand() / 32767.0;
+   double norm = MathRand() / RAND_MAX_MQL5;
    return min + (max - min) * norm;
 }
 
@@ -225,7 +230,7 @@ int CNeatCore::SelectParent(SGenome &population[], double total_fitness)
    if(total_fitness <= 0.0)
    {
       // Random selection if no fitness
-      return (int)(RandomRange(0, ArraySize(population) - 0.001));
+      return (int)(RandomRange(0, ArraySize(population) - ARRAY_IDX_EPSILON));
    }
    
    double spin = RandomRange(0.0, total_fitness);
@@ -329,7 +334,7 @@ void CNeatCore::Mutate(SGenome &genome, SInnovation &innovations[], int &innovat
       int link_count = ArraySize(genome.links);
       if(link_count > 0)
       {
-         int link_idx = (int)(RandomRange(0, link_count - 0.001));
+         int link_idx = (int)(RandomRange(0, link_count - ARRAY_IDX_EPSILON));
          if(genome.links[link_idx].enabled)
          {
             int in_id = genome.links[link_idx].in_node_id;
@@ -404,8 +409,8 @@ void CNeatCore::Mutate(SGenome &genome, SInnovation &innovations[], int &innovat
          ArrayResize(genome.links, link_count + 1);
          
          // Random connection
-         int in_idx = (int)(RandomRange(0, node_count - 0.001));
-         int out_idx = (int)(RandomRange(0, node_count - 0.001));
+         int in_idx = (int)(RandomRange(0, node_count - ARRAY_IDX_EPSILON));
+         int out_idx = (int)(RandomRange(0, node_count - ARRAY_IDX_EPSILON));
          
          genome.links[link_count].in_node_id = genome.nodes[in_idx].id;
          genome.links[link_count].out_node_id = genome.nodes[out_idx].id;
@@ -422,9 +427,9 @@ void CNeatCore::Mutate(SGenome &genome, SInnovation &innovations[], int &innovat
          if(genome.links[i].enabled)
          {
             double gauss = 0.0;
-            for(int j = 0; j < 12; j++)
+            for(int j = 0; j < GAUSS_SAMPLES; j++)
                gauss += RandomRange(0.0, 1.0);
-            gauss = (gauss - 6.0) * 0.1;
+            gauss = (gauss - GAUSS_MEAN) * GAUSS_STDDEV;
             
             genome.links[i].weight += gauss;
             genome.links[i].weight = MathMax(-5.0, MathMin(5.0, genome.links[i].weight));
@@ -622,7 +627,7 @@ bool CDistributedNeatManager::InitializePopulation(int population_size, int inpu
             
             state.population[i].links[j].in_node_id = in_id;
             state.population[i].links[j].out_node_id = out_id;
-            state.population[i].links[j].weight = (MathRand() / 32767.0) * 2.0 - 1.0;
+            state.population[i].links[j].weight = (MathRand() / RAND_MAX_MQL5) * 2.0 - 1.0;
             state.population[i].links[j].enabled = true;
             state.population[i].links[j].recurrent = false;
          }
